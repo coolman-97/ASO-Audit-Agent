@@ -1,3 +1,4 @@
+import "./runtime"; // tune undici timeouts before any LLM fetch happens
 import { Mastra } from "@mastra/core";
 import { asoAuditAgent } from "./agents/aso-audit-agent";
 import { scoringAgent } from "./agents/scoring-agent";
