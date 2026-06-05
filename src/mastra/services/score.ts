@@ -1,16 +1,18 @@
 import type { Mastra } from "@mastra/core";
 import {
   asoReportSchema,
-  auditScoringSchema,
+  modelAuditSchema,
   type AppExtras,
   type AppMetadata,
   type AsoReport,
-  type AuditScoring,
   type Competitor,
+  type DimensionScore,
+  type ModelAudit,
+  type Recommendation,
   type ReviewSummary,
   type VisualAnalysis,
 } from "../schema";
-import { computeOverallScore, dimensionRubricText } from "../skills/aso-audit-skill";
+import { DIMENSIONS, computeOverallScore, dimensionRubricText } from "../skills/aso-audit-skill";
 
 export interface AuditInputs {
   metadata: AppMetadata;
@@ -25,6 +27,21 @@ function clip(text: string | undefined | null, max: number): string {
   const clean = text.replace(/\r/g, "").trim();
   return clean.length > max ? `${clean.slice(0, max).trimEnd()}…` : clean;
 }
+
+const JSON_SHAPE = `
+Return ONLY a JSON object — no markdown, no code fences, no prose before or after.
+Shape:
+{
+  "dimensions": [ { "key": "<dimension key>", "score": <0-10 number>, "evidence": "<actual data point>", "notes": "<what would improve it>" } ],
+  "quickWins":  [ { "title": "<imperative>", "detail": "<specific, cites evidence>", "before": "<optional current text>", "after": "<optional proposed text>" } ],
+  "highImpact": [ { "title": "...", "detail": "...", "before": "...", "after": "..." } ],
+  "strategic":  [ { "title": "...", "detail": "..." } ],
+  "competitorComparison": [ { "name": "<app>", "rating": "<e.g. 4.8>", "ratingCount": "<e.g. 40M>", "note": "<short>" } ],
+  "summary": "<2-3 sentence executive summary>"
+}
+Include ALL 10 dimensions using EXACTLY these keys:
+title, subtitle, keywordField, description, screenshots, appPreviewVideo, ratingsReviews, icon, conversionSignals, competitivePosition.
+For competitorComparison, list the audited app FIRST, then up to 3 competitors.`;
 
 /** Turn everything we gathered into a single, evidence-rich prompt for the model. */
 export function buildAuditPrompt(input: AuditInputs): { prompt: string; dataNotes: string[] } {
@@ -94,41 +111,81 @@ export function buildAuditPrompt(input: AuditInputs): { prompt: string; dataNote
     }
   }
   lines.push("");
-  lines.push("# RUBRIC (score each 0-10, use these exact keys)");
+  lines.push("# RUBRIC (score each 0-10)");
   lines.push(dimensionRubricText());
   lines.push("");
   lines.push("# KNOWN DATA LIMITATIONS (do not fabricate around these)");
   for (const n of dataNotes) lines.push(`- ${n}`);
   lines.push("");
-  lines.push(
-    "Produce the full audit. For competitorComparison, list the audited app FIRST, then the competitors, " +
-      "comparing rating, rating count, and a short note each.",
-  );
+  lines.push("# OUTPUT");
+  lines.push(JSON_SHAPE);
 
   return { prompt: lines.join("\n"), dataNotes };
 }
 
-/**
- * Run the LLM scoring via a Mastra agent (which gives us a JSON fallback for
- * models with weak structured-output support), then assemble the final report.
- */
-export async function scoreListing(mastra: Mastra, input: AuditInputs): Promise<AsoReport> {
-  const { prompt, dataNotes } = buildAuditPrompt(input);
-  const agent = mastra.getAgent("scoringAgent");
+/** Pull a JSON object out of a model response (tolerates code fences / stray prose). */
+function extractJson(text: string): unknown {
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  const candidate = fenced ? fenced[1] : text;
+  const start = candidate.indexOf("{");
+  const end = candidate.lastIndexOf("}");
+  if (start === -1 || end === -1 || end < start) {
+    throw new Error("No JSON object found in the model response.");
+  }
+  return JSON.parse(candidate.slice(start, end + 1));
+}
 
-  const result = await agent.generate(prompt, {
-    structuredOutput: { schema: auditScoringSchema },
+const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+const KEY_BY_NORM = new Map(DIMENSIONS.map((d) => [norm(d.key), d.key]));
+// Also map normalized labels (e.g. "ratings & reviews") to canonical keys.
+for (const d of DIMENSIONS) KEY_BY_NORM.set(norm(d.label), d.key);
+
+function toRecommendation(r: ModelAudit["quickWins"][number]): Recommendation {
+  return {
+    title: r.title,
+    detail: r.detail,
+    ...(r.dimension ? { dimension: r.dimension } : {}),
+    ...(r.before ? { before: r.before } : {}),
+    ...(r.after ? { after: r.after } : {}),
+  };
+}
+
+/** Map the lenient model output onto the strict report shape: canonical weights/
+ *  labels, all 10 dimensions guaranteed, scores clamped, overall computed. */
+function assembleReport(model: ModelAudit, input: AuditInputs, dataNotes: string[]): AsoReport {
+  const byKey = new Map<string, (typeof model.dimensions)[number]>();
+  for (const d of model.dimensions) {
+    const canonical = KEY_BY_NORM.get(norm(d.key));
+    if (canonical) byKey.set(canonical, d);
+  }
+
+  const dimensions: DimensionScore[] = DIMENSIONS.map((def) => {
+    const m = byKey.get(def.key);
+    const score = Math.max(0, Math.min(10, Math.round((m?.score ?? 5) * 10) / 10));
+    return {
+      key: def.key,
+      label: def.label,
+      weight: def.weight,
+      score,
+      evidence: m?.evidence || "Not assessed.",
+      notes: m?.notes || "",
+    };
   });
-
-  const scoring = result.object as AuditScoring;
-  const overallScore = computeOverallScore(
-    scoring.dimensions.map((d) => ({ score: d.score, weight: d.weight })),
-  );
 
   const m = input.metadata;
   return asoReportSchema.parse({
-    ...scoring,
-    overallScore,
+    dimensions,
+    overallScore: computeOverallScore(dimensions),
+    quickWins: model.quickWins.map(toRecommendation),
+    highImpact: model.highImpact.map(toRecommendation),
+    strategic: model.strategic.map(toRecommendation),
+    competitorComparison: model.competitorComparison.map((c) => ({
+      name: c.name,
+      rating: c.rating,
+      ratingCount: c.ratingCount,
+      note: c.note,
+    })),
+    summary: model.summary,
     app: {
       name: m.name,
       developer: m.developer,
@@ -139,4 +196,29 @@ export async function scoreListing(mastra: Mastra, input: AuditInputs): Promise<
     },
     dataNotes,
   } satisfies AsoReport);
+}
+
+/**
+ * Run the LLM scoring via the scoring agent (plain generation + a controlled
+ * lenient parse — no unbounded structured-output retry loop), then assemble the
+ * strict report. One corrective retry if the first response isn't valid JSON.
+ */
+export async function scoreListing(mastra: Mastra, input: AuditInputs): Promise<AsoReport> {
+  const { prompt, dataNotes } = buildAuditPrompt(input);
+  const agent = mastra.getAgent("scoringAgent");
+
+  const attempt = async (extra = ""): Promise<ModelAudit> => {
+    const res = await agent.generate(extra ? `${prompt}\n\n${extra}` : prompt);
+    return modelAuditSchema.parse(extractJson(res.text));
+  };
+
+  let model: ModelAudit;
+  try {
+    model = await attempt();
+  } catch {
+    // Single corrective retry: re-ask for strictly valid JSON only.
+    model = await attempt("Your previous reply was not valid JSON. Reply with ONLY the JSON object, nothing else.");
+  }
+
+  return assembleReport(model, input, dataNotes);
 }

@@ -90,48 +90,85 @@ export const DIMENSION_KEYS = [
 ] as const;
 export type DimensionKey = (typeof DIMENSION_KEYS)[number];
 
+// ── Final (strict) shapes rendered by the UI ─────────────────────────────────
+
 export const dimensionScoreSchema = z.object({
   key: z.enum(DIMENSION_KEYS),
   label: z.string(),
-  weight: z.number().describe("Percentage weight of this dimension."),
-  score: z.number().min(0).max(10).describe("0-10 score for this dimension."),
-  evidence: z.string().describe("The concrete data point(s) this score is based on."),
-  notes: z.string().describe("Brief reasoning / what would improve it."),
+  weight: z.number(),
+  score: z.number().min(0).max(10),
+  evidence: z.string(),
+  notes: z.string(),
 });
 export type DimensionScore = z.infer<typeof dimensionScoreSchema>;
 
 export const recommendationSchema = z.object({
-  title: z.string().describe("Short imperative headline, e.g. 'Add a benefit-driven subtitle'."),
-  detail: z.string().describe("Specific, actionable explanation citing the evidence."),
-  dimension: z.enum(DIMENSION_KEYS).optional(),
-  before: z.string().optional().describe("Current text, for text-based changes."),
-  after: z.string().optional().describe("Proposed replacement text."),
+  title: z.string(),
+  detail: z.string(),
+  dimension: z.string().optional(),
+  before: z.string().optional(),
+  after: z.string().optional(),
 });
 export type Recommendation = z.infer<typeof recommendationSchema>;
 
-/** What the scoring agent is asked to produce (overallScore is computed in code). */
-export const auditScoringSchema = z.object({
-  dimensions: z.array(dimensionScoreSchema),
-  quickWins: z.array(recommendationSchema).describe("3-5 high-impact changes doable today."),
-  highImpact: z.array(recommendationSchema).describe("3-5 changes needing more effort."),
-  strategic: z.array(recommendationSchema).describe("3-5 longer-term improvements."),
+export const competitorRowSchema = z.object({
+  name: z.string(),
+  rating: z.string(),
+  ratingCount: z.string(),
+  note: z.string(),
+});
+
+// ── Lenient model-output schema ──────────────────────────────────────────────
+// We are liberal in what we accept from the LLM (it only needs to return a
+// score + prose per dimension; weights/labels are attached in code) and strict
+// in what we emit to the UI. This keeps scoring reliable across models that
+// struggle with large strict JSON schemas.
+
+const looseString = z.string().optional().default("");
+
+export const modelRecommendationSchema = z.object({
+  title: z.string(),
+  detail: looseString,
+  dimension: z.string().optional(),
+  before: z.string().optional(),
+  after: z.string().optional(),
+});
+
+export const modelDimensionSchema = z.object({
+  key: z.string(),
+  score: z.coerce.number().default(5),
+  evidence: looseString,
+  notes: looseString,
+});
+
+export const modelAuditSchema = z.object({
+  dimensions: z.array(modelDimensionSchema).default([]),
+  quickWins: z.array(modelRecommendationSchema).default([]),
+  highImpact: z.array(modelRecommendationSchema).default([]),
+  strategic: z.array(modelRecommendationSchema).default([]),
   competitorComparison: z
     .array(
       z.object({
-        name: z.string(),
-        rating: z.string(),
-        ratingCount: z.string(),
-        note: z.string(),
+        name: looseString,
+        rating: looseString,
+        ratingCount: looseString,
+        note: looseString,
       }),
     )
-    .describe("The audited app first, then up to 3 competitors."),
-  summary: z.string().describe("2-3 sentence executive summary of the listing's ASO health."),
+    .default([]),
+  summary: looseString,
 });
-export type AuditScoring = z.infer<typeof auditScoringSchema>;
+export type ModelAudit = z.infer<typeof modelAuditSchema>;
 
 /** The full report handed to the UI: scoring + the app it describes + computed score. */
-export const asoReportSchema = auditScoringSchema.extend({
-  overallScore: z.number().describe("Weighted 0-100 overall ASO score."),
+export const asoReportSchema = z.object({
+  dimensions: z.array(dimensionScoreSchema),
+  overallScore: z.number(),
+  quickWins: z.array(recommendationSchema),
+  highImpact: z.array(recommendationSchema),
+  strategic: z.array(recommendationSchema),
+  competitorComparison: z.array(competitorRowSchema),
+  summary: z.string(),
   app: z.object({
     name: z.string(),
     developer: z.string(),
@@ -140,6 +177,6 @@ export const asoReportSchema = auditScoringSchema.extend({
     country: z.string(),
     trackViewUrl: z.string(),
   }),
-  dataNotes: z.array(z.string()).describe("Caveats about data that was unavailable/inferred."),
+  dataNotes: z.array(z.string()),
 });
 export type AsoReport = z.infer<typeof asoReportSchema>;
