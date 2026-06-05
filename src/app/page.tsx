@@ -4,10 +4,14 @@ export default function Home() {
   return (
     <div className="shell">
       <header className="masthead">
-        <div className="brand">
-          ASO <b>Audit</b> Agent
+        <div className="brandwrap">
+          <div className="brandmark">A</div>
+          <div className="brand">
+            ASO <b>Audit</b> Agent
+            <small>App Store Optimization</small>
+          </div>
         </div>
-        <div className="tag">App Store Optimization · Mastra</div>
+        <div className="tag">Powered by Mastra</div>
       </header>
       <Console />
     </div>
