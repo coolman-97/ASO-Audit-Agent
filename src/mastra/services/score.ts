@@ -48,16 +48,18 @@ export function buildAuditPrompt(input: AuditInputs): { prompt: string; dataNote
   const { metadata: m, extras, reviews, competitors, visuals } = input;
   const dataNotes: string[] = [];
 
+  // Only surface notes for data that is genuinely missing — not for expected
+  // ASO findings (e.g. an app simply having no subtitle/promo text/video) and
+  // not for the keyword field (never public by design; the model infers it and
+  // says so, per the rubric).
   if (extras.source === "unavailable") {
-    dataNotes.push("Subtitle, promotional text and preview-video status could not be retrieved (no Firecrawl key / page gated).");
-  } else if (extras.source === "html-parse") {
-    dataNotes.push("Subtitle/promo text from a best-effort HTML parse; may be incomplete. Set FIRECRAWL_API_KEY for reliable extraction.");
+    dataNotes.push("The App Store web page couldn't be fetched, so subtitle, promotional text and preview-video status are unavailable.");
   }
-  if (extras.subtitle == null) dataNotes.push("Subtitle was not observed — score the dimension from the title/positioning and recommend one.");
-  dataNotes.push("The 100-char keyword field is never public; it is inferred, not read.");
-  if (!visuals.available) dataNotes.push("Vision analysis was unavailable — Screenshots/Icon scored from metadata heuristics only.");
-  if (!reviews.available) dataNotes.push("Recent reviews feed was unavailable.");
-  if (competitors.length === 0) dataNotes.push("No competitor data was retrieved for the category.");
+  if (!visuals.available) {
+    dataNotes.push("Vision analysis was unavailable — Screenshots & Icon were scored from metadata heuristics only.");
+  }
+  if (!reviews.available) dataNotes.push("The recent-reviews feed was unavailable.");
+  if (competitors.length === 0) dataNotes.push("No competitor data was retrieved for this category.");
 
   const lines: string[] = [];
   lines.push("# APP UNDER AUDIT");

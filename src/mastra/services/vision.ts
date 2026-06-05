@@ -1,28 +1,40 @@
 import { generateText } from "ai";
 import type { AppMetadata, VisualAnalysis } from "../schema";
 import { getVisionModel } from "../model";
+import { fetchWithTimeout } from "./http";
 
 /**
- * Analyze the icon and the first few screenshots with a vision model. Several
- * rubric dimensions (Screenshots, Icon) reward reading the actual creative, not
- * just counting slots. This is best-effort: if the configured model can't do
- * vision (or anything fails), we degrade to `available: false` and the scorer
- * falls back to metadata-only heuristics.
+ * Analyze the icon and the first couple of screenshots with a vision model.
+ * Several rubric dimensions (Screenshots, Icon) reward reading the actual
+ * creative, not just counting slots.
+ *
+ * We fetch each image ourselves (downscaled via Apple's CDN URL so payloads stay
+ * small) and send ONE image per request — many hosted vision models (incl. the
+ * NVIDIA NIM default) cap requests at a single image. Best-effort throughout: if
+ * anything fails we degrade to `available: false` and the scorer falls back to
+ * metadata-only heuristics.
  */
 
-const MAX_SCREENSHOTS = 4;
+const MAX_SCREENSHOTS = 2;
 
-async function describe(prompt: string, imageUrls: string[]): Promise<string> {
+/** Rewrite an mzstatic image URL to a small JPG box to keep the payload small. */
+function downscale(url: string, box: number): string {
+  return url.replace(/\/\d+x\d+(?:bb|sr|fn)?\.(?:png|jpe?g|webp)$/i, `/${box}x${box}bb.jpg`);
+}
+
+async function loadImage(url: string, box: number): Promise<Uint8Array> {
+  const res = await fetchWithTimeout(downscale(url, box), { headers: { "User-Agent": "Mozilla/5.0" } }, 10_000);
+  if (!res.ok) throw new Error(`image download failed: ${res.status}`);
+  return new Uint8Array(await res.arrayBuffer());
+}
+
+/** Describe a SINGLE image. */
+async function describe(prompt: string, url: string, box: number): Promise<string> {
+  const image = await loadImage(url, box);
   const { text } = await generateText({
     model: getVisionModel(),
     messages: [
-      {
-        role: "user",
-        content: [
-          { type: "text", text: prompt },
-          ...imageUrls.map((url) => ({ type: "image" as const, image: new URL(url) })),
-        ],
-      },
+      { role: "user", content: [{ type: "text", text: prompt }, { type: "image", image, mediaType: "image/jpeg" }] },
     ],
   });
   return text.trim();
@@ -33,41 +45,37 @@ export async function analyzeVisuals(app: AppMetadata): Promise<VisualAnalysis> 
     app.screenshotUrls.length > 0 ? app.screenshotUrls : app.ipadScreenshotUrls
   ).slice(0, MAX_SCREENSHOTS);
 
-  const base: VisualAnalysis = {
-    available: false,
+  const iconPromise = app.iconUrl
+    ? describe(
+        "You are an ASO expert. In 2-3 sentences, assess this app icon: Is it distinctive and " +
+          "recognizable at small sizes? Category-appropriate? Does it rely on hard-to-read text? " +
+          "Be specific about colors/shapes.",
+        app.iconUrl,
+        256,
+      ).catch(() => null)
+    : Promise.resolve(null);
+
+  // One request per screenshot (single-image limit), then combine.
+  const shotPromises = screenshots.map((url, i) =>
+    describe(
+      `You are an ASO expert reviewing App Store screenshot #${i + 1}. In 2 sentences: does it ` +
+        "communicate value, is the on-image text large and readable (Apple OCR-indexes it), and is " +
+        "the design polished? Quote any caption text you can read.",
+      url,
+      320,
+    )
+      .then((t) => `Screenshot ${i + 1}: ${t}`)
+      .catch(() => null),
+  );
+
+  const [iconObservations, ...shotResults] = await Promise.all([iconPromise, ...shotPromises]);
+  const shots = shotResults.filter((s): s is string => Boolean(s));
+  const screenshotObservations = shots.length > 0 ? shots.join("\n") : null;
+
+  return {
+    available: Boolean(iconObservations || screenshotObservations),
     screenshotCount: app.screenshotUrls.length || app.ipadScreenshotUrls.length,
-    iconObservations: null,
-    screenshotObservations: null,
+    iconObservations,
+    screenshotObservations,
   };
-
-  try {
-    const [iconObservations, screenshotObservations] = await Promise.all([
-      app.iconUrl
-        ? describe(
-            "You are an ASO expert. In 2-3 sentences, assess this app icon: Is it " +
-              "distinctive and recognizable at small sizes? Category-appropriate? Does it " +
-              "rely on hard-to-read text? Be specific about colors/shapes.",
-            [app.iconUrl],
-          )
-        : Promise.resolve(null),
-      screenshots.length > 0
-        ? describe(
-            "You are an ASO expert reviewing the first App Store screenshots. In 3-4 " +
-              "sentences: Do the first 1-2 communicate the core value? Is on-image text " +
-              "large and readable (Apple OCR-indexes it)? Is the design language cohesive? " +
-              "Note any captions you can read.",
-            screenshots,
-          )
-        : Promise.resolve(null),
-    ]);
-
-    return {
-      ...base,
-      available: Boolean(iconObservations || screenshotObservations),
-      iconObservations,
-      screenshotObservations,
-    };
-  } catch {
-    return base;
-  }
 }

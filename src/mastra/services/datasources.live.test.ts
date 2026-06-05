@@ -37,10 +37,12 @@ describe("live data sources", () => {
     expect(competitors[0].name).toBeTruthy();
   }, 30_000);
 
-  it("fetches extras without throwing (Firecrawl optional)", async () => {
+  it("extracts the subtitle + video flag keylessly (no Firecrawl)", async () => {
     const app = await lookupAppByUrl(SPOTIFY);
     const extras = await fetchAppExtras(app);
-    expect(["firecrawl", "html-parse", "unavailable"]).toContain(extras.source);
+    expect(extras.source).toBe("html-parse");
+    expect(extras.subtitle).toBeTruthy(); // Spotify has a subtitle
+    expect(typeof extras.hasAppPreviewVideo).toBe("boolean");
   }, 30_000);
 
   it("assembles a complete audit prompt", async () => {

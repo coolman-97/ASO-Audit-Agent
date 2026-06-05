@@ -36,7 +36,7 @@ model ids. **NVIDIA NIM** is the default (free credits at
 | `LLM_BASE_URL` | – | Defaults to `https://integrate.api.nvidia.com/v1`. |
 | `LLM_MODEL` | – | Reasoning/scoring model. Default `meta/llama-3.3-70b-instruct`. **Must support tool calling.** |
 | `LLM_VISION_MODEL` | – | Vision model for screenshot/icon analysis. Default `meta/llama-3.2-90b-vision-instruct`. Falls back gracefully if unavailable. |
-| `FIRECRAWL_API_KEY` | – | Optional. Enables robust subtitle / promo-text / preview-video extraction. Without it, a keyless fallback is used. |
+| `FIRECRAWL_API_KEY` | – | Optional. A keyless parser already extracts the subtitle + preview-video reliably; Firecrawl is only an upgrade for promotional-text robustness. |
 
 To use OpenAI instead, for example:
 
@@ -80,13 +80,16 @@ Browser (useChat)  ──/api/chat──►  asoAuditAgent  (chat + confirmation
 | iTunes **Lookup API** | name, developer, icon, category, description, "What's New", screenshots, ratings, version |
 | iTunes **reviews RSS** | recent reviews (rating + text) → trend & themes |
 | iTunes **Search / genre charts** | top category competitors, enriched with ratings |
-| App Store **web page** (Firecrawl) | subtitle, promotional text, preview-video presence |
+| App Store **web page** (keyless parse) | subtitle + preview-video presence (promo text too, when set) |
 | **Vision model** | reads the actual icon + first screenshots (OCR-able text, value, cohesion) |
 
 The audit is **honest about what it can't see**: the 100-char keyword field is never
-public (it's inferred), preview-video *content* can't be analyzed (only presence),
-and developer review-responses aren't in the feed. These show up as "Data notes" in
-the report rather than being fabricated.
+public (the model infers candidate keywords from the title/subtitle/description, as
+real ASO practitioners do), preview-video *content* can't be analyzed (only
+presence), and developer review-responses aren't in the feed. Genuine data gaps
+(e.g. a page that failed to load) show up as "Data notes" rather than being
+fabricated; expected findings (an app simply having no subtitle) are reported as
+recommendations, not caveats.
 
 ---
 
@@ -129,9 +132,10 @@ deterministic machinery is proven without burning provider credits.
 ## Decisions left to me
 
 - **Apple's free JSON API is primary, not scraping.** The iTunes Lookup + RSS +
-  Search APIs cover ~90% of the rubric reliably for any app. Firecrawl is used only
-  for the three fields those APIs lack (subtitle, promo text, video), with a keyless
-  fallback so the app runs without a Firecrawl key.
+  Search APIs cover most of the rubric reliably for any app. The three fields they
+  lack (subtitle, promo text, video) come from a small keyless parse of the App
+  Store web page — the subtitle and preview-video flag are extracted reliably with
+  no API key; Firecrawl is an optional upgrade for promotional-text robustness.
 - **Custom Next.js UI over the Mastra playground**, because the brief explicitly
   asks for the recommendations to be "actually nice to look at" — a hand-built
   scorecard (animated progress bars, before/after rewrites, competitor table) does
