@@ -8,11 +8,11 @@ const ORDER = [
   "appPreviewVideo", "ratingsReviews", "icon", "conversionSignals", "competitivePosition",
 ];
 
-/** 0-10 → color on the red→amber→green scale. */
-function scoreColor(score10: number): string {
-  if (score10 < 4) return "var(--score-low)";
-  if (score10 < 7) return "var(--score-mid)";
-  return "var(--score-high)";
+/** Per-dimension status (0-10 scale). */
+function status(score: number): { label: string; color: string; bg: string } {
+  if (score >= 7) return { label: "Strong", color: "var(--score-high)", bg: "rgba(79,209,165,0.14)" };
+  if (score >= 4) return { label: "Fair", color: "var(--score-mid)", bg: "rgba(239,173,60,0.14)" };
+  return { label: "Weak", color: "var(--score-low)", bg: "rgba(239,90,82,0.14)" };
 }
 
 function grade(overall: number): { label: string; color: string; bg: string } {
@@ -31,7 +31,7 @@ function Gauge({ overall }: { overall: number }) {
     const t = setTimeout(() => setOffset(target), 80);
     return () => clearTimeout(t);
   }, [target]);
-  const color = scoreColor(overall / 10);
+  const color = status(overall / 10).color;
   return (
     <div className="gauge">
       <svg viewBox="0 0 150 150" width="150" height="150">
@@ -52,14 +52,17 @@ function Gauge({ overall }: { overall: number }) {
 
 function Dimension({ dim, first }: { dim: DimensionScore; first: boolean }) {
   const pct = Math.max(0, Math.min(10, dim.score)) * 10;
-  const color = scoreColor(dim.score);
+  const st = status(dim.score);
   return (
     <div className="dim" style={first ? { paddingTop: 0, borderTop: "none" } : undefined}>
       <div className="dim__head">
         <div className="dim__label">{dim.label}<small>{dim.weight}%</small></div>
-        <div className="dim__score" style={{ color }}><b>{dim.score}</b><span>/10</span></div>
+        <div className="dim__right">
+          <span className="dstatus" style={{ color: st.color, background: st.bg }}>{st.label}</span>
+          <div className="dim__score" style={{ color: st.color }}><b>{dim.score}</b><span>/10</span></div>
+        </div>
       </div>
-      <div className="dim__track"><div className="dim__fill" style={{ width: `${pct}%`, background: color }} /></div>
+      <div className="dim__track"><div className="dim__fill" style={{ width: `${pct}%`, background: st.color }} /></div>
       {dim.evidence && <div className="dim__evidence"><b>Why:</b> {dim.evidence}</div>}
     </div>
   );
@@ -92,6 +95,13 @@ export function ScoreCard({ report }: { report: AsoReport }) {
   const dims = [...report.dimensions].sort((a, b) => ORDER.indexOf(a.key) - ORDER.indexOf(b.key));
   const g = grade(report.overallScore);
 
+  const strong = dims.filter((d) => d.score >= 7).length;
+  const fair = dims.filter((d) => d.score >= 4 && d.score < 7).length;
+  const weak = dims.filter((d) => d.score < 4).length;
+
+  // Focus areas = the lowest-scoring dimensions worth fixing first.
+  const focus = [...dims].sort((a, b) => a.score - b.score).filter((d) => d.score < 7).slice(0, 3);
+
   return (
     <div className="report">
       <div className="hero">
@@ -109,11 +119,36 @@ export function ScoreCard({ report }: { report: AsoReport }) {
           </div>
           <span className="grade" style={{ color: g.color, background: g.bg }}>● {g.label}</span>
           <p className="hero__summary">{report.summary}</p>
+          <div className="glance">
+            <span className="glance-chip"><span className="gd" style={{ background: "var(--score-high)" }} /><b>{strong}</b> strong</span>
+            <span className="glance-chip"><span className="gd" style={{ background: "var(--score-mid)" }} /><b>{fair}</b> fair</span>
+            <span className="glance-chip"><span className="gd" style={{ background: "var(--score-low)" }} /><b>{weak}</b> need work</span>
+          </div>
         </div>
       </div>
 
+      {focus.length > 0 && (
+        <div>
+          <h3 className="section__title">Fix These First</h3>
+          <div className="focusgrid">
+            {focus.map((d) => {
+              const st = status(d.score);
+              return (
+                <div className="focuscard" key={d.key} style={{ borderLeftColor: st.color }}>
+                  <div className="fl">
+                    <span className="fname">{d.label}</span>
+                    <span className="fscore" style={{ color: st.color }}>{d.score}/10</span>
+                  </div>
+                  <div className="fnote">{d.notes || d.evidence}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <div>
-        <h3 className="section__title">ASO Score Card</h3>
+        <h3 className="section__title">Full Score Card</h3>
         <div className="panel dims">
           {dims.map((d, i) => <Dimension key={d.key} dim={d} first={i === 0} />)}
         </div>

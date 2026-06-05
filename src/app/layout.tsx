@@ -2,8 +2,12 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "ASO Audit Agent",
+  title: "ASO Audit Agent — App Store Optimization",
   description: "Paste an Apple App Store URL and get a prioritized App Store Optimization audit.",
+};
+
+export const viewport = {
+  themeColor: "#0b0a0f",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
