@@ -18,6 +18,9 @@ next-env.d.ts
 *.db
 *.db-journal
 
+# local tooling (personal MCP servers, editor state)
+.mcp.json
+
 # misc
 .DS_Store
 *.pem
