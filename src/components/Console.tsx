@@ -146,7 +146,7 @@ export function Console() {
                       app={card}
                       actionable={actionable}
                       onConfirm={() => send("Yes, run the full audit.")}
-                      onReject={() => send("No, that's not the right app — let me paste a different link.")}
+                      onReject={() => send("No, that's not the right app - let me paste a different link.")}
                     />
                   )}
                 </div>

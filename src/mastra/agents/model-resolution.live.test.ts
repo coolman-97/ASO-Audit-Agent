@@ -1,7 +1,7 @@
 /**
  * Verifies that a Mastra agent resolves our OpenAICompatibleConfig (providerId +
  * modelId + url + apiKey) and issues a correctly-formed request to the endpoint.
- * Uses a local mock OpenAI-compatible server — no real provider key required.
+ * Uses a local mock OpenAI-compatible server - no real provider key required.
  * Opt-in via `npm run test:integration`.
  */
 import { createServer, type Server } from "node:http";

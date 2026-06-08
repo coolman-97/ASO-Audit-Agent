@@ -3,7 +3,7 @@ import type { DimensionKey } from "../schema";
 /**
  * The ASO audit "skill": the rubric, the scoring rules, and the prompt builders,
  * all in one place. Adapted from the open-source aso-skills project. This is the
- * single source of truth for how the listing is judged — the scoring step and the
+ * single source of truth for how the listing is judged - the scoring step and the
  * agent's instructions both read from here.
  */
 
@@ -88,7 +88,7 @@ export const DIMENSIONS: DimensionDef[] = [
     weight: 5,
     checks:
       "Promotional text used? 'What's New' (release notes) informative? In-App Events / custom " +
-      "product pages (not directly observable — recommend if absent).",
+      "product pages (not directly observable - recommend if absent).",
   },
   {
     key: "competitivePosition",

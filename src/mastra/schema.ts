@@ -31,7 +31,7 @@ export const appMetadataSchema = z.object({
 });
 export type AppMetadata = z.infer<typeof appMetadataSchema>;
 
-// ── Web-only extras (subtitle / promo text / video) — not in Apple's JSON API ─
+// ── Web-only extras (subtitle / promo text / video) - not in Apple's JSON API ─
 
 export const appExtrasSchema = z.object({
   subtitle: z.string().nullable(),

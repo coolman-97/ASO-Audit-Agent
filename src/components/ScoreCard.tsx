@@ -113,7 +113,7 @@ export function ScoreCard({ report }: { report: AsoReport }) {
               <h1 className="hero__title">{report.app.name}</h1>
               <div className="hero__sub">
                 {report.app.developer} · {report.app.primaryGenre} · {report.app.country.toUpperCase()}{" "}
-                — <a className="viewlink" href={report.app.trackViewUrl} target="_blank" rel="noreferrer">App Store ↗</a>
+                - <a className="viewlink" href={report.app.trackViewUrl} target="_blank" rel="noreferrer">App Store ↗</a>
               </div>
             </div>
           </div>

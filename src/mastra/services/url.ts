@@ -38,7 +38,7 @@ function extractCountry(url: string): string {
       return first;
     }
   } catch {
-    // Not a parseable URL — fall through to the default.
+    // Not a parseable URL - fall through to the default.
   }
   return DEFAULT_COUNTRY;
 }

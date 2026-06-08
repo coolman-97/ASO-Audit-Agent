@@ -29,7 +29,7 @@ function clip(text: string | undefined | null, max: number): string {
 }
 
 const JSON_SHAPE = `
-Return ONLY a JSON object — no markdown, no code fences, no prose before or after.
+Return ONLY a JSON object - no markdown, no code fences, no prose before or after.
 Shape:
 {
   "dimensions": [ { "key": "<dimension key>", "score": <0-10 number>, "evidence": "<actual data point>", "notes": "<what would improve it>" } ],
@@ -48,7 +48,7 @@ export function buildAuditPrompt(input: AuditInputs): { prompt: string; dataNote
   const { metadata: m, extras, reviews, competitors, visuals } = input;
   const dataNotes: string[] = [];
 
-  // Only surface notes for data that is genuinely missing — not for expected
+  // Only surface notes for data that is genuinely missing - not for expected
   // ASO findings (e.g. an app simply having no subtitle/promo text/video) and
   // not for the keyword field (never public by design; the model infers it and
   // says so, per the rubric).
@@ -56,7 +56,7 @@ export function buildAuditPrompt(input: AuditInputs): { prompt: string; dataNote
     dataNotes.push("The App Store web page couldn't be fetched, so subtitle, promotional text and preview-video status are unavailable.");
   }
   if (!visuals.available) {
-    dataNotes.push("Vision analysis was unavailable — Screenshots & Icon were scored from metadata heuristics only.");
+    dataNotes.push("Vision analysis was unavailable - Screenshots & Icon were scored from metadata heuristics only.");
   }
   if (!reviews.available) dataNotes.push("The recent-reviews feed was unavailable.");
   if (competitors.length === 0) dataNotes.push("No competitor data was retrieved for this category.");
@@ -109,7 +109,7 @@ export function buildAuditPrompt(input: AuditInputs): { prompt: string; dataNote
     lines.push("(none retrieved)");
   } else {
     for (const c of competitors) {
-      lines.push(`- ${c.name} by ${c.developer} — ${c.averageUserRating ?? "?"}★ (${c.userRatingCount?.toLocaleString() ?? "?"} ratings)`);
+      lines.push(`- ${c.name} by ${c.developer} - ${c.averageUserRating ?? "?"}★ (${c.userRatingCount?.toLocaleString() ?? "?"} ratings)`);
     }
   }
   lines.push("");
@@ -202,7 +202,7 @@ function assembleReport(model: ModelAudit, input: AuditInputs, dataNotes: string
 
 /**
  * Run the LLM scoring via the scoring agent (plain generation + a controlled
- * lenient parse — no unbounded structured-output retry loop), then assemble the
+ * lenient parse - no unbounded structured-output retry loop), then assemble the
  * strict report. One corrective retry if the first response isn't valid JSON.
  */
 export async function scoreListing(mastra: Mastra, input: AuditInputs): Promise<AsoReport> {

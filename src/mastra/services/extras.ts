@@ -5,7 +5,7 @@ import { fetchWithTimeout } from "./http";
 
 /**
  * The subtitle, promotional text, and app-preview-video flag are NOT in Apple's
- * public JSON API — they only live on the App Store web page. We extract them
+ * public JSON API - they only live on the App Store web page. We extract them
  * with a keyless HTML parse (reliable for the subtitle + video across arbitrary
  * listings) and optionally upgrade to Firecrawl when a key is present.
  */
@@ -68,7 +68,7 @@ async function viaFirecrawl(url: string, apiKey: string): Promise<AppExtras> {
         type: "json",
         schema: firecrawlSchema,
         prompt:
-          "Extract the app's subtitle (the short tagline under the app name, max ~30 chars — NOT " +
+          "Extract the app's subtitle (the short tagline under the app name, max ~30 chars - NOT " +
           "the description), the promotional text if present, and whether an app preview video exists.",
       },
     ],

@@ -18,7 +18,7 @@ function truncate(text: string, max = 280): string {
 
 /**
  * Fetch recent reviews from the public iTunes RSS feed and reduce them to a
- * compact summary. Theme extraction is intentionally left to the scoring LLM —
+ * compact summary. Theme extraction is intentionally left to the scoring LLM -
  * here we only provide a balanced, truncated sample of excerpts + the recent
  * average so the model reasons over real data rather than guesses.
  */

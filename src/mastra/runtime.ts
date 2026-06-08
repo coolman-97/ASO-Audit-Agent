@@ -3,8 +3,8 @@
  * instance is created.
  *
  * NVIDIA NIM's free tier can take a long time to send the first response byte
- * (cold starts / queueing), and large requests — e.g. the agent's final turn
- * carrying the full audit report — exceed Node's default undici headers timeout,
+ * (cold starts / queueing), and large requests - e.g. the agent's final turn
+ * carrying the full audit report - exceed Node's default undici headers timeout,
  * surfacing as `UND_ERR_HEADERS_TIMEOUT`. We raise the header/body timeouts and
  * keep pooled connections fresh so a stale keep-alive socket can't stall a call.
  *

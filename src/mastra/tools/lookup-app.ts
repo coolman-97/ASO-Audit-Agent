@@ -18,7 +18,7 @@ export const appCardSchema = z.object({
 
 /**
  * Step 2 of the flow: fetch SURFACE metadata only, for the "is this the app you
- * meant?" confirmation. Cheap, fast, no LLM — just Apple's lookup API.
+ * meant?" confirmation. Cheap, fast, no LLM - just Apple's lookup API.
  */
 export const lookupAppTool = createTool({
   id: "lookupApp",

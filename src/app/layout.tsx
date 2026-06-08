@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "ASO Audit Agent — App Store Optimization",
+  title: "ASO Audit Agent - App Store Optimization",
   description: "Paste an Apple App Store URL and get a prioritized App Store Optimization audit.",
 };
 

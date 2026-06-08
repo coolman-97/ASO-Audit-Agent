@@ -30,7 +30,7 @@ beforeAll(async () => {
       res.setHeader("Cache-Control", "no-cache");
 
       if (!hasToolResult) {
-        // First turn: ask the model — it "decides" to call lookupApp.
+        // First turn: ask the model - it "decides" to call lookupApp.
         res.write(
           sse({
             id: "c", object: "chat.completion.chunk", model: "mock",

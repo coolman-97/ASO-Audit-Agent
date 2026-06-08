@@ -5,11 +5,11 @@
 
 A TypeScript chat application that audits any Apple App Store listing across **10 weighted
 ASO dimensions** and renders a polished scorecard with quick wins, high-impact changes,
-strategic recommendations, and a competitor comparison — every finding tied to a real data
+strategic recommendations, and a competitor comparison - every finding tied to a real data
 point pulled from live Apple APIs.
 
-Built on **[Mastra](https://mastra.ai)** — idiomatic use of **agents**, **tools**,
-**workflows**, and a reusable **skill** — with a hand-built **Next.js** front end.
+Built on **[Mastra](https://mastra.ai)** - idiomatic use of **agents**, **tools**,
+**workflows**, and a reusable **skill** - with a hand-built **Next.js** front end.
 
 ![flow](https://img.shields.io/badge/flow-paste%20%E2%86%92%20confirm%20%E2%86%92%20audit-f5b43e)
 ![stack](https://img.shields.io/badge/stack-Next.js%2015%20%C2%B7%20React%2019%20%C2%B7%20Mastra-141219)
@@ -41,7 +41,7 @@ Built on **[Mastra](https://mastra.ai)** — idiomatic use of **agents**, **tool
 1. **Paste** an App Store URL into the chat
    (e.g. `https://apps.apple.com/us/app/spotify-music-and-podcasts/id324684580`).
 2. The agent fetches **surface metadata** (name, developer, icon, category, rating) and shows a
-   **confirmation card** — *"Is this the app you meant?"* — then **stops and waits**.
+   **confirmation card** - *"Is this the app you meant?"* - then **stops and waits**.
 3. On your **"yes"**, it runs the **full audit**: gathering reviews, competitors, listing extras,
    and a vision read of the screenshots/icon, then scoring the listing with an LLM.
 4. While it runs, the chat **streams live progress**; when it finishes, a rich **scorecard**
@@ -52,15 +52,15 @@ Built on **[Mastra](https://mastra.ai)** — idiomatic use of **agents**, **tool
 
 - 🎯 **10-dimension weighted rubric** (Title, Subtitle, Keyword field, Description, Screenshots,
   App-preview video, Ratings & reviews, Icon, Conversion signals, Competitive position).
-- 🔎 **Every score is evidence-cited** — actual character counts, ratings, review themes,
-  competitor gaps — and text recommendations include concrete **before → after** examples.
+- 🔎 **Every score is evidence-cited** - actual character counts, ratings, review themes,
+  competitor gaps - and text recommendations include concrete **before → after** examples.
 - 👁️ **Vision analysis** of the real icon + first screenshots (OCR-able text, value, cohesion),
   with graceful fallback to metadata heuristics when no vision model is available.
-- 🆓 **Keyless by default** — primary data comes from Apple's free JSON/RSS APIs; the three fields
+- 🆓 **Keyless by default** - primary data comes from Apple's free JSON/RSS APIs; the three fields
   those APIs lack (subtitle, promo text, video) come from a small keyless web parse.
-- 🔌 **Provider-agnostic** — one env switch moves the whole app between NVIDIA NIM, OpenAI,
+- 🔌 **Provider-agnostic** - one env switch moves the whole app between NVIDIA NIM, OpenAI,
   Together, Groq, Ollama, etc. (anything OpenAI-compatible).
-- 🛡️ **Honest about what it can't see** — genuine data gaps surface as *"Data notes"* instead of
+- 🛡️ **Honest about what it can't see** - genuine data gaps surface as *"Data notes"* instead of
   being fabricated around.
 
 ---
@@ -72,8 +72,8 @@ shape below maps each concern to the Mastra primitive that fits it best:
 
 | Concern | Primitive | Why |
 |---|---|---|
-| Turn-taking conversation + the confirmation gate | **Agent** (`asoAuditAgent`) | Natural language, deciding when to call which tool — what an LLM agent is good at. |
-| Deterministic audit orchestration | **Workflow** (`asoAudit`) | Fixed steps, parallel fan-out, typed I/O, per-step progress — what a workflow is good at. |
+| Turn-taking conversation + the confirmation gate | **Agent** (`asoAuditAgent`) | Natural language, deciding when to call which tool - what an LLM agent is good at. |
+| Deterministic audit orchestration | **Workflow** (`asoAudit`) | Fixed steps, parallel fan-out, typed I/O, per-step progress - what a workflow is good at. |
 | Producing the structured report | **Agent** (`scoringAgent`) | A tool-less generation agent the workflow calls, isolated from the chat. |
 | The rubric, weights, prompt & score math | **Skill** (`aso-audit-skill.ts`) | One source of truth both agents read from. |
 | Cheap "what app is this?" lookup vs. the full run | **Tools** (`lookupApp`, `runAudit`) | Two clearly-scoped tools the agent chooses between. |
@@ -84,7 +84,7 @@ shape below maps each concern to the Mastra primitive that fits it best:
 
 ```mermaid
 flowchart TB
-    subgraph Browser["🖥️  Browser — Next.js / React 19"]
+    subgraph Browser["🖥️  Browser - Next.js / React 19"]
         UI["Console (useChat)\nAppConfirmCard · ScoreCard · HeaderActions"]
     end
 
@@ -147,7 +147,7 @@ sequenceDiagram
     A->>L: lookupApp(url)
     L->>A: surface metadata (name, dev, icon, rating)
     A-->>UI: confirmation card + "Is this the app you meant?"
-    Note over A,UI: Agent STOPS and waits — never audits before "yes"
+    Note over A,UI: Agent STOPS and waits - never audits before "yes"
 
     U->>UI: "yes"
     UI->>A: messages (full history)
@@ -164,7 +164,7 @@ sequenceDiagram
 ```
 
 The confirmation gate is **instruction-enforced** in the agent prompt (it must look up, present,
-and wait — never audit in the same turn). No server-side memory is needed: `useChat` resends the
+and wait - never audit in the same turn). No server-side memory is needed: `useChat` resends the
 full history each turn, so the agent always has the prior confirmation context.
 
 ---
@@ -184,7 +184,7 @@ flowchart LR
 
     S1 --> S2
 
-    subgraph S2["② gather-signals  (Promise.all — parallel)"]
+    subgraph S2["② gather-signals  (Promise.all - parallel)"]
         direction TB
         E["fetchAppExtras\nsubtitle · promo · video"]
         RV["fetchReviewSummary\nrecent reviews → themes"]
@@ -236,14 +236,14 @@ The rubric lives in **`src/mastra/skills/aso-audit-skill.ts`** as the single sou
 | **Competitive position** | 5% | Keyword/visual/rating gap vs. top 3 category competitors? |
 
 **Weights sum to 110%**, so the overall score is computed as a **weight-normalized average** of the
-0–10 dimension scores scaled to 0–100 — a true score out of 100 regardless of the weight total
+0–10 dimension scores scaled to 0–100 - a true score out of 100 regardless of the weight total
 (`computeOverallScore`).
 
 **Lenient in, strict out.** The LLM only has to return a `{ score, evidence, notes }` per dimension
 plus the recommendation lists (a small, forgiving JSON shape). Weights, labels, clamping, key
 canonicalization, and the overall score are all attached **in code** (`score.ts → assembleReport`),
 then validated against the strict `asoReportSchema` the UI consumes. This keeps scoring reliable even
-on models with weaker structured-output support — with a single corrective retry if the first reply
+on models with weaker structured-output support - with a single corrective retry if the first reply
 isn't valid JSON.
 
 ---
@@ -349,7 +349,7 @@ npm run test:integration     # live: real Apple APIs + a mock LLM (no keys neede
 
 The integration suite exercises the whole **non-LLM path against live Apple endpoints**, and
 verifies Mastra **model resolution**, **structured-output scoring**, and the full **`runAudit` →
-workflow** pipeline against a **mock OpenAI-compatible server** — so the deterministic machinery is
+workflow** pipeline against a **mock OpenAI-compatible server** - so the deterministic machinery is
 proven end-to-end without burning provider credits.
 
 ---
@@ -366,13 +366,13 @@ These are the calls the brief explicitly left open.
   *"actually nice to look at,"* so a hand-built scorecard (animated bars, before/after rewrites,
   competitor table) beats markdown in a generic chat.
 - **Agent for conversation, workflow for the audit.** The confirmation is natural turn-taking; the
-  audit is deterministic orchestration. The gate is instruction-enforced — it could be hardened with
+  audit is deterministic orchestration. The gate is instruction-enforced - it could be hardened with
   Mastra's `requireApproval` for a stricter click-to-approve flow.
 - **Lenient model schema, strict UI schema.** The model returns a small, forgiving shape; weights,
   labels, clamping, and the overall score are computed in code and validated with zod. Reliable
   across models that struggle with large strict JSON schemas.
 - **Weights are normalized.** They sum to 110%, so the overall score is a weight-normalized average
-  scaled to 0–100 — a true /100 regardless of the weight total.
+  scaled to 0–100 - a true /100 regardless of the weight total.
 - **Provider-agnostic via OpenAI-compatible.** One env switch moves between NIM, OpenAI, etc. Vision
   degrades gracefully, so a non-vision model still produces a full audit.
 
@@ -382,14 +382,14 @@ These are the calls the brief explicitly left open.
 
 The audit is deliberate about what it **can't** see, and never fabricates around it:
 
-- The **100-char keyword field is never public** — the model infers candidate keywords from the
+- The **100-char keyword field is never public** - the model infers candidate keywords from the
   title/subtitle/description (as real ASO practitioners do) and says so.
 - **Preview-video content** can't be analyzed (only presence is detectable).
 - **Developer review-responses** aren't in the RSS feed.
 - Genuine gaps (a page that failed to load, vision unavailable, no competitors retrieved) surface as
-  **"Data notes"** in the report — *expected* findings (an app simply having no subtitle) are reported
+  **"Data notes"** in the report - *expected* findings (an app simply having no subtitle) are reported
   as recommendations, not caveats.
-- **Tool-calling quality depends on the chosen model** — use a tool-calling-capable model for the
+- **Tool-calling quality depends on the chosen model** - use a tool-calling-capable model for the
   chat agent (the defaults are).
 - Free-tier rate limits / the 90B vision model can add latency; the audit fetches in parallel and
   completes with partial data (noted in the report) if a source is slow or fails.

@@ -50,7 +50,7 @@ async function searchAppIdsByTerm(term: string, country: string): Promise<string
 
 /**
  * Find up to 3 competitors in the same category and enrich them with ratings.
- * Prefers the genre top-charts; falls back to a keyword search. Never throws —
+ * Prefers the genre top-charts; falls back to a keyword search. Never throws -
  * an empty list just means the competitive-position dimension is scored softly.
  */
 export async function findCompetitors(app: AppMetadata): Promise<Competitor[]> {

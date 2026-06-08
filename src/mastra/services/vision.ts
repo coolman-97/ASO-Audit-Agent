@@ -9,7 +9,7 @@ import { fetchWithTimeout } from "./http";
  * creative, not just counting slots.
  *
  * We fetch each image ourselves (downscaled via Apple's CDN URL so payloads stay
- * small) and send ONE image per request — many hosted vision models (incl. the
+ * small) and send ONE image per request - many hosted vision models (incl. the
  * NVIDIA NIM default) cap requests at a single image. Best-effort throughout: if
  * anything fails we degrade to `available: false` and the scorer falls back to
  * metadata-only heuristics.

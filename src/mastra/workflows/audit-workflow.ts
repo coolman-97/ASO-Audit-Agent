@@ -15,7 +15,7 @@ import { findCompetitors } from "../services/competitors";
 import { analyzeVisuals } from "../services/vision";
 import { scoreListing } from "../services/score";
 
-/** Emit a human-readable progress line. Best-effort — never blocks the audit. */
+/** Emit a human-readable progress line. Best-effort - never blocks the audit. */
 async function report(writer: { write: (d: unknown) => Promise<void> } | undefined, status: string) {
   try {
     await writer?.write({ type: "data-audit-progress", data: { status } });
