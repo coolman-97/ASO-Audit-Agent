@@ -1,6 +1,6 @@
 # Atenda MVP, Founding Engineer Response (Phone-first variant)
 
-**From:** Fang Zhang
+**From:** Nate Tan
 **To:** Christopher (Co-Founder & CCO, AtendaCare)
 **Re:** Your nine questions
 
@@ -181,7 +181,7 @@ I'd resist the urge to staff up faster than this. Five engineers shipping in dif
 5. **Caregiver retention.** Daily voice is a high engagement ask. If a caregiver does 3 calls and quits, we don't have a billable code's worth of monitoring. This is more of a product risk than a tech risk, but engineering can move the needle (right time of day, right call length, right empathy in the model, easy reschedule).
 6. **Voice latency vs. cost.** OpenAI Realtime is excellent and expensive. At pilot scale, fine. At 10,000 caregivers, the math changes, and switching the voice stack later isn't free. Worth architecting the voice layer behind a clean interface so we can swap providers.
 7. **Vendor concentration.** Twilio + Azure OpenAI + AWS = three vendors who could each end us if they have an outage or a policy change. Multi-provider isn't a month-one investment, but knowing the exit path for each is.
-8. **Single founding engineer = bus factor of one.** I'd want a documented "what to do if Fang gets hit by a bus" runbook before we hit even 10 caregivers. Not paranoia, table stakes for handling PHI.
+8. **Single founding engineer = bus factor of one.** I'd want a documented "what to do if Nate gets hit by a bus" runbook before we hit even 10 caregivers. Not paranoia, table stakes for handling PHI.
 
 ---
 
@@ -191,4 +191,4 @@ Christopher, the reason I'm interested in this is straightforward: you've alread
 
 Happy to go deeper on any of these in the technical conversation, particularly the phone-first call, the clinical extraction pipeline, and the hallucination story, since those are the three I have the most opinions on.
 
-, Fang
+Nate Tan
