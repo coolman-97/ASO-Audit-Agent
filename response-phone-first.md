@@ -1,26 +1,5 @@
 # Atenda MVP, Founding Engineer Response (Phone-first variant)
 
----
-
-## Suggested email body (paste into reply to Christopher)
-
-> Hi Christopher,
->
-> Thanks, really appreciated the question. Rather than a few bullet points I put my thinking into the attached doc, including an architecture sketch.
->
-> The short version: I'd go **phone-first, not app-first** for the pilot. I think it's the faster, cheaper, more caregiver-friendly path to 60 real users and it changes most of the downstream answers. I make the case in Q1 and Q3.
->
-> Happy to dig into any of this on a call, the conversation design, the hallucination story, and the FHIR mapping are the three I have the most opinions on.
->
-> Cheers,
-> Fang
-
----
-
-## Attached doc
-
-# Atenda MVP, Founding Engineer Response
-
 **From:** Fang Zhang
 **To:** Christopher (Co-Founder & CCO, AtendaCare)
 **Re:** Your nine questions
